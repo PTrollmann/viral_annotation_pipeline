@@ -78,21 +78,11 @@ Use your project name and docker image, use a VM with high memory and enough dis
 ###
     nano ~/.sparkles
 
-This config file works for most parts, but some files are so large that they need >300GB disk space. Also the calculation needs lots of RAM and CPU, so a bigger one works better
-
-```[config]
-default_url_prefix=gs://virus_expression_results
-project=philipp-trollmann
-default_image=us-central1-docker.pkg.dev/philipp-trollmann/hermit-dev/hermit-ubuntu:v09112024
-machine_type=n2-highmem-2
-zones=us-central1-a
-region=us-central1
-boot_volume_in_gb=100```
-
 config file for sparkles
 (a smaller VM and less memory space work for most files, but some are too big and need more memory)
 
-```[config]
+```
+[config]
 default_url_prefix=gs://virus_expression_results
 project=philipp-trollmann
 default_image=us-central1-docker.pkg.dev/philipp-trollmann/hermit-dev/hermit-ubuntu:v09112024
@@ -100,7 +90,8 @@ machine_type=n2-highmem-8
 zones=us-central1-a
 region=us-central1
 boot_volume_in_gb=400
-mount_1_size_in_gb=50```
+mount_1_size_in_gb=50
+```
 
 
 The output are quant.sf files for every cell line that contains the TPM values for every gene
