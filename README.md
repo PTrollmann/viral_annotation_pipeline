@@ -12,8 +12,8 @@ Then the script will make a bam to fastq file conversion (takes 40-60 minutes), 
 The script will then run the quantification with salmon and give out the results to the google bucket.
 
 Synchronize needed data with the your VM 
-rsync -avz ~/experiment_data/virus_genes/ my-vm:/home/ubuntu/experiments/virus_genes
-
+###
+    rsync -avz ~/experiment_data/virus_genes/ my-vm:/home/ubuntu/experiments/virus_genes
 
 For eventual updates to your script you can synchronize it like this
 ###
@@ -32,18 +32,19 @@ Get the result to your machine and analyse with Python script
 ###
     gsutil -m cp -r -c gs://virus_expression_results/transcript_quant_results/* ~/experiment_data/virus_genes/transcripts_quant
 
-Google bucket with all the results:
+Current Google bucket with all the results (but change as you need it to be) </br>
 gs://virus_expression_results/transcript_quant_results
 
 ## If you want to understand the full process then read the details below.
-Have your VMs and Google Bucket be in the same region as the storage buckets, as this reduces the costs.
-The bam files are accessed directly from the google bucket and converted to fastq files with samtools and bedtools.
+Have your VMs and Google Bucket be in the same region as the storage buckets, as this reduces the costs. </br>
+The bam files are accessed directly from the google bucket and converted to fastq files with samtools and bedtools. </br>
 I you want to make the salmon index yourself you also need to install salmon to the VM (https://salmon.readthedocs.io/en/latest/index.html) and use a VM with enough CPU and RAM, n2-highmem-4 works (but anything less can make problems, mostly the task will get killed from the OS as it uses to much RAM), this then can still take around 1.5 hours.
 
 ###
     gsutil -u {your-project-name} cat gs://cclebams/rnasq_hg38/CDS-37go6g.Aligned.sortedByCoord.out.bam | samtools sort -n | bedtools bamtofastq -i - -fq reads_1.fq -fq2 reads_2.fq
 
-We then also need an index for the salmon quantification. We can either do this without decoy, is easier to set up, but with decoy is supposed to be even more exact.
+We then also need an index for the salmon quantification (all this is done in the research_viral_annotations.ipynb script).  </br>
+We can either do this without decoy, is easier to set up, but with decoy is supposed to be even more exact.
 
 Download the human genome and viral genes with the Python script.
 
@@ -62,18 +63,19 @@ Run this terminal script
     conda activate salmon
     salmon index -t gentrome.fa -d decoys.txt -p 12 -i salmon_index --gencode -k 31
 
-Now you can run the salmon quantification either on individual cell lines, like
+Now you can run the salmon quantification either on individual cell lines
 ###
     conda activate salmon
     salmon quant -i transcripts_index -l A -1 cell_line_data/ACH-000556/reads_1.fq -2 cell_line_data/ACH-000556/reads_2.fq --validateMappings -o transcripts_quant_no_decoy/ACH-000556
 
-Or run lots of VMs at the same time with the sparkles command
+Or run lots of VMs at the same time with the sparkles command. (https://github.com/broadinstitute/sparklespray?tab=readme-ov-file) </br>
+This command uses a start-up script to prepare the VMs (could potentially also do that by setting up a prepared image for the VMs) and start the python script that than runs the Salmon transcript quantification. </br>
+Here 250 VMs are used, for 2150 cell lines this takes ~12h and costs ~680$. 
 ###
     conda activate sparkles
     sparkles sub -n run_viral_annotation -u vm-startup-script.sh -u run_viral_annotation.py --params cell_line_google_bucket_index.csv --nodes 2 bash vm-startup-script.sh '{entity:sample_id}' '{hg38_rna_bam}'
 
-
-Sparkle needs a config file, set it up like this
+Sparkle needs a config file, set it up like this.</br>
 Use your project name and docker image, use a VM with high memory and enough disk space
 ###
     nano ~/.sparkles
@@ -93,10 +95,9 @@ boot_volume_in_gb=400
 mount_1_size_in_gb=50
 ```
 
-
 The output are quant.sf files for every cell line that contains the TPM values for every gene
 
 
 ## Data analysis
-Run the analysis Python script provided to get correlations and plots.
+Run the analysis analyse_viral_annotations.ipynb script provided to get correlations and plots.
 
